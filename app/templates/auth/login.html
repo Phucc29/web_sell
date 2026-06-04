@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h3 class="text-center mb-4">Đăng nhập</h3>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form action="{{url_for('login')}}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu</label>
+                        <div class="position-relative">
+                            <input type="password" class="form-control pe-5" name="password" id="passwordInput" required>
+                            
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" id="togglePassword" style="cursor: pointer; color: #6c757d; z-index: 10;">
+                                
+                                <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l-.809-.805zm-4.653-3.805a1.5 1.5 0 0 0-1.41-1.41l1.41 1.41zM1.232 1.232l13.536 13.536-.708.708-13.536-13.536.708-.708zm2.463 3.447C2.08 5.86 1.14 7.07 1 8s3 5.5 8 5.5c1.19 0 2.29-.26 3.25-.691l-1.41-1.41A5.945 5.945 0 0 1 8 11.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8c.058-.087.122-.183.195-.288.335-.48.83-1.12 1.465-1.755l-.469-.469z"/>
+                                </svg>
+
+                                <svg id="icon-eye" class="d-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                </svg>
+
+                            </span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Đăng nhập</button> 
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('passwordInput');
+        const iconEyeSlash = document.getElementById('icon-eye-slash');
+        const iconEye = document.getElementById('icon-eye');
+
+        togglePassword.addEventListener('click', function () {
+            // Kiểm tra trạng thái hiện tại của input
+            if (passwordInput.type === 'password') {
+                // Đổi thành text để hiện mật khẩu
+                passwordInput.type = 'text';
+                // Đổi icon sang mắt mở
+                iconEyeSlash.classList.add('d-none');
+                iconEye.classList.remove('d-none');
+            } else {
+                // Đổi lại thành password để ẩn mật khẩu
+                passwordInput.type = 'password';
+                // Đổi icon sang mắt nhắm
+                iconEyeSlash.classList.remove('d-none');
+                iconEye.classList.add('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

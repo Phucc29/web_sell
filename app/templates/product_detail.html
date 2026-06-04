@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="mb-4">
+        <a href="/" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Quay lại cửa hàng
+        </a>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-3 bg-white rounded">
+                <img src="{{ product.image_url }}" 
+                     class="img-fluid d-block mx-auto" 
+                     alt="{{ product.name }}"
+                     style="max-height: 450px; object-fit: contain;">
+            </div>
+        </div>
+
+        <div class="col-md-6 d-flex flex-column justify-content-between">
+            <div>
+                <h1 class="display-6 fw-bold mb-3">{{ product.name }}</h1>
+                
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    {% if product.stock > 0 %}
+                        <span class="badge bg-success">Còn hàng</span>
+                        <span class="text-muted">| Kho: <strong>{{ product.stock }}</strong> sản phẩm</span>
+                    {% else %}
+                        <span class="badge bg-danger">Hết hàng</span>
+                    {% endif %}
+                </div>
+
+                <h3 class="text-primary fw-bold mb-4">
+                    {{ "{:,}".format(product.price) }} VND
+                </h3>
+
+                <hr class="text-muted my-4">
+
+                <h5 class="fw-bold mb-2">Mô tả sản phẩm:</h5>
+                <p class="text-secondary lh-base" style="text-align: justify;">
+                    {{ product.des }}
+                </p>
+            </div>
+
+            <div class="mt-4">
+                {% if product.stock > 0 %}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="input-group" style="width: 100px;">
+                            <input type="number" id="quantity-input" class="form-control text-center" 
+                                   value="1" min="1" max="{{ product.stock }}" 
+                                   onchange="validateQty()">
+                        </div>
+                        
+                        <button type="button" class="btn btn-success" onclick="addToCart({{ product.id }})">
+                            THÊM VÀO GIỎ HÀNG
+                        </button>
+                    </div>
+                {% else %}
+                    <button type="button" class="btn btn-secondary" disabled>
+                        HẾT HÀNG
+                    </button>
+                {% endif %}
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+// Biến lưu số lượng tồn kho tối đa từ server
+const maxStock = parseInt("{{ product.stock|default(0) }}") || 0;
+
+function validateQty() {
+    let input = document.getElementById("quantity-input");
+    let currentVal = parseInt(input.value);
+    
+    if (isNaN(currentVal) || currentVal < 1) {
+        input.value = 1;
+    } else if (currentVal > maxStock) {
+        input.value = maxStock;
+    }
+}
+
+function addToCart(productId) {
+    let quantity = 1;
+    let qtyInput = document.getElementById("quantity-input");
+    if (qtyInput) {
+        quantity = parseInt(qtyInput.value);
+    }
+
+    fetch(`/api/cart/add/${productId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ quantity: quantity })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("cart-count").innerText = data.cart_count;
+        } else {
+            alert(data.message || "Có lỗi xảy ra!");
+        }
+    })
+    .catch(error => {
+        console.error("Lỗi:", error);
+    });
+}
+
+</script>
+{% endblock %}

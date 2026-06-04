@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container py-4">
+<h3 class="cart-title">
+    <i class="bi bi-cart3 me-2"></i>
+    Giỏ hàng của bạn
+</h3>
+
+{% if cart_items %}
+
+    <div class="row cart-header text-center d-none d-md-flex">
+        <div class="col-md-5 text-start">Sản phẩm</div>
+        <div class="col-md-2">Đơn giá</div>
+        <div class="col-md-2">Số lượng</div>
+        <div class="col-md-2">Thành tiền</div>
+        <div class="col-md-1">Xóa</div>
+    </div>
+
+    {% for item, product in cart_items|reverse %}
+
+    <div class="row cart-item text-center align-items-center">
+
+        <div class="col-md-5 d-flex align-items-center text-start">
+
+            <img src="{{ product.image_url }}"
+                 alt="{{ product.name }}"
+                 class="cart-img">
+
+            <div class="product-name">
+                {{ product.name }}
+            </div>
+
+        </div>
+
+        <div class="col-md-2 mt-3 mt-md-0">
+
+            <span class="text-muted">
+                <del>
+                    ₫{{ "{:,.0f}".format(product.price * 1.2) }}
+                </del>
+            </span>
+
+            <br>
+
+            <span class="price">
+                ₫{{ "{:,.0f}".format(product.price) }}
+            </span>
+
+        </div>
+
+        <div class="col-md-2 mt-3 mt-md-0">
+
+            <div class="d-flex justify-content-center">
+
+                <button class="btn-qty">-</button>
+
+                <input type="text"
+                       class="qty-box"
+                       value="{{ item.quantity }}"
+                       readonly>
+
+                <button class="btn-qty">+</button>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-2 mt-3 mt-md-0 total-price">
+
+            ₫{{ "{:,.0f}".format(product.price * item.quantity) }}
+
+        </div>
+
+        <div class="col-md-1 mt-3 mt-md-0">
+
+            <a href="{{ url_for('remove_from_cart', item_id=item.id) }}"
+               class="remove-link">
+
+                <i class="bi bi-trash"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+    <div class="row cart-footer mt-4">
+
+        <div class="col-md-6 d-flex align-items-center">
+
+            <a href="/"
+               class="continue-shopping">
+
+                <i class="bi bi-arrow-left"></i>
+                Tiếp tục mua sắm
+
+            </a>
+
+        </div>
+
+        <div class="col-md-6 text-end">
+
+            <div class="mb-2">
+                Tổng thanh toán
+                ({{ cart_items|length }} sản phẩm)
+            </div>
+
+            <h3 class="fw-bold text-dark">
+                ₫{{ "{:,.0f}".format(total_amount) }}
+            </h3>
+
+            <a href="#"
+               class="btn btn-checkout mt-2">
+
+                <i class="bi bi-credit-card me-1"></i>
+                Thanh toán
+
+            </a>
+
+        </div>
+
+    </div>
+
+{% else %}
+
+    <div class="empty-cart text-center">
+
+        <i class="bi bi-cart-x empty-cart-icon"></i>
+
+        <h4 class="mt-4 text-muted">
+            Giỏ hàng của bạn đang trống
+        </h4>
+
+        <p class="text-muted">
+            Hãy thêm sản phẩm để bắt đầu mua sắm
+        </p>
+
+        <a href="/"
+           class="btn btn-dark mt-3 px-4">
+
+            <i class="bi bi-shop me-1"></i>
+            Mua ngay
+
+        </a>
+
+    </div>
+
+{% endif %}
+</div>
+
+{% endblock %}

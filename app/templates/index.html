@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row text-center mb-4">
+    <div class="col-12">
+        <h1 class="display-5">Chào mừng đến với cửa hàng của chúng tôi!</h1>
+        <p class="lead">Sản phẩm chất lượng - Thanh toán nhanh chóng.</p>
+    </div>
+    <!-- <form class="d-flex mx-auto search-box">
+        <input class="form-control me-2"
+            type="search"
+            placeholder="Tìm kiếm sản phẩm...">
+
+        <button class="btn btn-outline-dark" type="submit">
+            <i class="bi bi-search"></i>
+        </button>
+    </form> -->
+    <form class="d-flex mx-auto search-box position-relative" onsubmit="return false;">
+        <input class="form-control me-2" id="search-input" type="search" placeholder="Tìm kiếm sản phẩm..." autocomplete="off">
+        <button class="btn btn-outline-dark" type="submit">
+            <i class="bi bi-search"></i>
+        </button>
+        <div id="search-results" class="dropdown-menu w-100 shadow-sm mt-1" style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 300px; overflow-y: auto;"></div>
+    </form>
+</div>
+
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 250px; object-fit: contain; padding: 10px;">
+
+            <div class="card-body d-flex flex-column justify-content-center">
+                <h5 class="card-title text-center mb-0">{{ product.name }}</h5>
+            </div>
+
+            <div class="card-footer text-center bg-white">
+                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-primary">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+from flask import current_app as app, jsonify
+from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import render_template, request, redirect, url_for, flash, session
+from app.models import CartItem, Product, User
+
+@app.route("/")
+
+def home():
+    products = Product.query.all() 
+    print("PRODUCTS =", products)
+    return render_template('index.html', products=products)
+
+@app.route('/register', methods = ['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        user_exist = User.query.filter_by(username = username).first()
+        email_exist = User.query.filter_by(email=email).first()
+
+        if user_exist:
+            flash('Tên đăng nhập đã tồn tại', 'danger')
+            return redirect(url_for('register'))
+        if email_exist:
+            flash('Email này đã tồn tại', 'danger')
+            return redirect(url_for('register'))
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, email=email, password=hashed_password)
+
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Đăng ký thành công', 'success')
+        return redirect(url_for('login'))
+    return render_template('auth/register.html')
+
+@app.route('/login', methods = ['GET', 'POST'])
+
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            return redirect(url_for('home'))
+        else:
+            flash('Tên đăng nhập hoặc mật khẩu không chính xác', 'danger')
+    return render_template('auth/login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('username', None)
+    return redirect('login')
+
+@app.route('/product_id/<int:product_id>')
+def product_detail(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('product_detail.html', product=product)
+
+@app.route('/api/cart/add/<int:product_id>', methods = ['POST'])
+def api_add_to_cart(product_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'})
+    Product.query.get_or_404(product_id)
+    data = request.get_json()
+    quantity = int(data.get('quantity', 1))
+    user_id = session['user_id']
+    cart_item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
+    if cart_item:
+        cart_item.quantity += quantity
+    else:
+        cart_item = CartItem(user_id=user_id, product_id=product_id, quantity=quantity)
+        db.session.add(cart_item)
+    db.session.commit()
+    cart_count = sum(item.quantity for item in CartItem.query.filter_by(user_id=user_id).all())
+    return jsonify({'success':True, 'cart_count': cart_count})
+
+@app.route('/api/cart/count')
+def cart_count():
+    if 'user_id' not in session:
+        return jsonify({'count': 0})
+    count = sum(
+        item.quantity
+        for item in CartItem.query.filter_by(
+            user_id=session['user_id']
+        ).all()
+    )
+    return jsonify({'count': count})
+
+@app.route('/cart')
+def cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    cart_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
+    total_amount = sum(product.price * item.quantity for item, product in cart_items)
+    return render_template('cart.html', cart_items=cart_items, total_amount=total_amount)
+
+@app.route('/remove_from_cart/<int:item_id>')
+def remove_from_cart(item_id):
+    item = CartItem.query.get(item_id)
+    if item and item.user_id == session.get('user_id'):
+        db.session.delete(item)
+        db.session.commit()
+    return redirect(url_for('cart'))
