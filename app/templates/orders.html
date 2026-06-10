@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center mb-4 border-bottom pb-3">
+        <div class="bg-dark text-white rounded p-2 me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+            <i class="bi bi-clock-history fs-4"></i>
+        </div>
+        <div>
+            <h3 class="fw-bold mb-0 text-dark">Lịch sử mua hàng</h3>
+            <p class="text-muted mb-0 small">Quản lý và theo dõi trạng thái các đơn hàng bạn đã đặt</p>
+        </div>
+    </div>
+
+    {% if oders %}
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" class="ps-4 py-3">Mã đơn hàng</th>
+                            <th scope="col" class="py-3">Thời gian đặt</th>
+                            <th scope="col" class="py-3">Tổng thanh toán</th>
+                            <th scope="col" class="py-3">Trạng thái</th>
+                            <th scope="col" class="pe-4 py-3 text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for oder in oders %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">
+                                #PS-{{ oder.id }}
+                            </td>
+                            
+                            <td class="text-secondary">
+                                {{ oder.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            
+                            <td class="fw-bold text-danger">
+                                ₫{{ "{:,.0f}".format(oder.total_amount) }}
+                            </td>
+                            
+                            <td>
+                                {% if oder.status == 'Đang chờ xử lý' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fw-semibold">
+                                        <i class="bi bi-hourglass-split me-1"></i> {{ oder.status }}
+                                    </span>
+                                {% elif oder.status == 'Đang giao hàng' %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill fw-semibold">
+                                        <i class="bi bi-truck me-1"></i> {{ oder.status }}
+                                    </span>
+                                {% elif oder.status == 'Đã hoàn thành' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold">
+                                        <i class="bi bi-check-circle me-1"></i> {{ oder.status }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 rounded-pill fw-semibold">
+                                        {{ oder.status }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="pe-4 text-end">
+                                <a href="{{ url_for('order_detail', oder_id = oder.id) }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                                    Chi tiết <i class="bi bi-arrow-right-short ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5 my-4 bg-white rounded-3 shadow-sm border">
+            <div class="text-muted mb-3">
+                <i class="bi bi-bag-x" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Bạn chưa có đơn hàng nào!</h4>
+            <p class="text-muted col-md-6 mx-auto">
+                Lịch sử mua sắm của bạn hiện đang trống. Hãy quay lại trang chủ để khám phá hàng ngàn sản phẩm tuyệt vời của PhucShop nhé!
+            </p>
+            <a href="/" class="btn btn-dark mt-2 px-4 py-2 rounded-pill fw-semibold shadow-sm">
+                <i class="bi bi-shop me-2"></i>Tiếp tục mua sắm
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

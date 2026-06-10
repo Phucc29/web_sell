@@ -37,7 +37,7 @@ class Oder(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete = 'CASCADE'), nullable = False)
     total_amount = db.Column(db.Numeric(10,2), nullable = False)
     status = db.Column(db.String(100), nullable = False, default = 'Đang chờ xử lý')
-    created_at = db.Column(db.DateTime, default = datetime.utcnow)
+    created_at = db.Column(db.DateTime, default = datetime.now)
 
     item = db.relationship('OderItem', backref = 'oder', lazy = True)
     

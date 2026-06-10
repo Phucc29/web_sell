@@ -40,26 +40,25 @@
             
             <ul class="navbar-nav align-items-center ms-auto">
 
-                <!-- Cart -->
-                <li class="nav-item me-3">
-
-                    <a href="/cart"
-                       class="nav-link position-relative fs-4">
-
-                        <i class="bi bi-cart3"></i>
-
-                        <span id="cart-count"
-                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-
-                            0
-
-                        </span>
-
-                    </a>
-
-                </li>
-
                 {% if 'user_id' in session %}
+                    <!-- Cart -->
+                    <li class="nav-item me-3">
+
+                        <a href="/cart"
+                        class="nav-link position-relative fs-4">
+
+                            <i class="bi bi-cart3"></i>
+
+                            <span id="cart-count"
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+
+                                0
+
+                            </span>
+
+                        </a>
+
+                    </li>
 
                     <!-- User Dropdown -->
                     <li class="nav-item dropdown">
@@ -77,14 +76,7 @@
                         <ul class="dropdown-menu dropdown-menu-end">
 
                             <li>
-                                <a class="dropdown-item" href="#">
-                                    <i class="bi bi-person me-2"></i>
-                                    Hồ sơ
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ url_for('order_history') }}">
                                     <i class="bi bi-bag-check me-2"></i>
                                     Đơn hàng
                                 </a>
@@ -188,15 +180,14 @@
 <script>
     // Hàm này sẽ chạy mỗi khi bất kỳ trang nào (Trang chủ, Sản phẩm...) được tải xong
     document.addEventListener("DOMContentLoaded", function() {
-        fetch("/api/cart/count")
-            .then(res => res.json())
-            .then(data => {
-                // Đảm bảo rằng trên Menu của bạn có thẻ chứa id="cart-count"
-                let cartBadge = document.getElementById("cart-count");
-                if (cartBadge) {
+        let cartBadge = document.getElementById("cart-count");
+        if(cartBadge){
+            fetch("/api/cart/count")
+                .then(res => res.json())
+                .then(data => {
                     cartBadge.innerText = data.count;
-                }
-            })
-            .catch(error => console.error("Lỗi cập nhật giỏ hàng:", error));
+                })
+                .catch(error => console.error("Lỗi cập nhật giỏ hàng:", error));
+        }
     });
 </script>

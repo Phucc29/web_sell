@@ -2,7 +2,7 @@ from flask import current_app as app, jsonify
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import render_template, request, redirect, url_for, flash, session
-from app.models import CartItem, Product, User
+from app.models import CartItem, Product, User, Oder, OderItem
 
 @app.route("/")
 
@@ -109,3 +109,40 @@ def remove_from_cart(item_id):
         db.session.delete(item)
         db.session.commit()
     return redirect(url_for('cart'))
+
+@app.route('/checkout', methods = ['GET','POST'])
+def checkout():
+    user_id = session['user_id']
+    cart_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
+    total_amount = sum(product.price * item.quantity for item, product in cart_items)
+
+    if not cart_items and request.method == 'GET':
+        return redirect(url_for('cart'))
+    if request.method == 'POST':
+        new_oder = Oder(user_id = user_id, total_amount = total_amount, status = 'Đang chờ xử lý')
+        db.session.add(new_oder)
+        db.session.flush()
+        for item, product in cart_items:
+            item_total_money = product.price * item.quantity
+            new_item = OderItem(oder_id = new_oder.id, product_id = product.id, quantity=item.quantity, total_money = item_total_money)
+            db.session.add(new_item)
+        CartItem.query.filter_by(user_id=user_id).delete()
+        db.session.commit()
+        return redirect(url_for('order_history'))
+    
+    return render_template('checkout.html', cart_items = cart_items, total_amount = total_amount)
+
+@app.route('/orders')
+def order_history():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    user_oders = Oder.query.filter_by(user_id = user_id).order_by(Oder.created_at.desc()).all()
+    return render_template('orders.html', oders = user_oders)
+
+@app.route('/order/<int:oder_id>')
+def order_detail(oder_id):
+    user_id = session.get('user_id')
+    oder = Oder.query.filter_by(id = oder_id, user_id = user_id).first_or_404()
+    oder_items = db.session.query(OderItem, Product).join(Product, OderItem.product_id == Product.id).filter(OderItem.oder_id == oder_id).all()
+    return render_template('order_detail.html', oder = oder, oder_items=oder_items)
