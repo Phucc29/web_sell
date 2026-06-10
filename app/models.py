@@ -11,6 +11,7 @@ class User(db.Model):
 
     cart = db.relationship('CartItem', backref = 'user', lazy = True)
     orders = db.relationship('Oder', backref = 'user', lazy = True)
+    is_admin = db.Column(db.Boolean, default=False, nullable = False)
 
 class Product(db.Model):
     __tablename__ = 'products'

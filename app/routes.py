@@ -47,7 +47,11 @@ def login():
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
-            return redirect(url_for('home'))
+            session['is_admin'] = user.is_admin
+            if user.is_admin:
+                return redirect(url_for('admin.index'))
+            else:
+                return redirect(url_for('home'))
         else:
             flash('Tên đăng nhập hoặc mật khẩu không chính xác', 'danger')
     return render_template('auth/login.html')

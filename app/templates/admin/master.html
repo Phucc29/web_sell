@@ -1,0 +1,6 @@
+{% extends 'admin/base.html' %}
+
+{% block head_css %}
+    {{ super() }}
+    {{ custom_css | safe if custom_css else '' }}
+{% endblock %}
