@@ -127,6 +127,10 @@ def checkout():
         db.session.add(new_oder)
         db.session.flush()
         for item, product in cart_items:
+            if product.stock < item.quantity:
+                flash(f'Sản phẩm {product.name} chỉ còn {product.stock} trong kho, không đủ số lượng đặt hàng!', 'danger')
+                return redirect(url_for('cart'))
+            product.stock -= item.quantity
             item_total_money = product.price * item.quantity
             new_item = OderItem(oder_id = new_oder.id, product_id = product.id, quantity=item.quantity, total_money = item_total_money)
             db.session.add(new_item)
@@ -150,3 +154,26 @@ def order_detail(oder_id):
     oder = Oder.query.filter_by(id = oder_id, user_id = user_id).first_or_404()
     oder_items = db.session.query(OderItem, Product).join(Product, OderItem.product_id == Product.id).filter(OderItem.oder_id == oder_id).all()
     return render_template('order_detail.html', oder = oder, oder_items=oder_items)
+
+@app.route('/api/cart/update/<int:item_id>', methods=['POST'])
+def update_cart_item(item_id):
+    user_id = session.get('user_id')
+    cart_item = CartItem.query.filter_by(id=item_id, user_id=user_id).first()
+    if not cart_item:
+        return jsonify({'success': False, 'message': 'Không tìm thấy sản phẩm trong giỏ!'}), 404
+    data = request.get_json()
+    new_qty = int(data.get('quantity', 1))
+    if new_qty < 1:
+        return jsonify({'success': False, 'message': 'Số lượng không hợp lệ!'}), 400
+    
+    cart_item.quantity = new_qty
+    db.session.commit()
+    all_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
+    new_total_amount = sum(product.price * item.quantity for item, product in all_items)
+
+    cart_count = sum(item.quantity for item in CartItem.query.filter_by(user_id=user_id).all())
+    return jsonify({
+        'success': True,
+        'new_total_amount': new_total_amount,
+        'cart_count': cart_count
+    })

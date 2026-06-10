@@ -52,22 +52,25 @@
 
         <div class="col-md-2 mt-3 mt-md-0">
 
-            <div class="d-flex justify-content-center">
+            <div class="d-flex justify-content-center align-items-center">
 
-                <button class="btn-qty">-</button>
+                <button class="btn-qty js-btn-minus" data-item-id="{{ item.id }}">-</button>
 
                 <input type="text"
-                       class="qty-box"
-                       value="{{ item.quantity }}"
-                       readonly>
+                    class="qty-box text-center"
+                    id="qty-{{ item.id }}"
+                    value="{{ item.quantity }}"
+                    data-price="{{ product.price }}"
+                    readonly
+                    style="width: 50px;">
 
-                <button class="btn-qty">+</button>
+                <button class="btn-qty js-btn-plus" data-item-id="{{ item.id }}">+</button>
 
             </div>
 
         </div>
 
-        <div class="col-md-2 mt-3 mt-md-0 total-price">
+        <div class="col-md-2 mt-3 mt-md-0 total-price" id="total-price-{{ item.id }}">
 
             ₫{{ "{:,.0f}".format(product.price * item.quantity) }}
 
@@ -106,10 +109,10 @@
 
             <div class="mb-2">
                 Tổng thanh toán
-                ({{ cart_items|length }} sản phẩm)
+                ({{ cart_items | map(attribute='0.quantity') | sum }} sản phẩm)
             </div>
 
-            <h3 class="fw-bold text-dark">
+            <h3 class="fw-bold text-dark" id="cart-total-amount">
                 ₫{{ "{:,.0f}".format(total_amount) }}
             </h3>
 
@@ -151,5 +154,64 @@
 
 {% endif %}
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.js-btn-plus').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item-id');
+                const inputField = document.getElementById(`qty-${itemId}`);
+                let currentQty = parseInt(inputField.value);
+                currentQty += 1;
+                inputField.value = currentQty;
+                sendUpdateCart(itemId, currentQty);
+            });
+        });
+        document.querySelectorAll('.js-btn-minus').forEach(button => {
+            button.addEventListener('click', function(){
+                const itemId = this.getAttribute('data-item-id');
+                const inputField = document.getElementById(`qty-${itemId}`);
+                let currentQty = parseInt(inputField.value);
+                if(currentQty > 1){
+                    currentQty -= 1;
+                    inputField.value = currentQty;
+                    sendUpdateCart(itemId, currentQty);
+                }
+            });
+        });
+        function sendUpdateCart(itemId, newQty){
+            fetch(`/api/cart/update/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({quantity: newQty})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success){
+                    const inputField = document.getElementById(`qty-${itemId}`);
+                    const price = parseFloat(inputField.getAttribute('data-price'));
+                    const lineTotal = price*newQty;
 
+                    const lineTotalElem = document.getElementById(`total-price-${itemId}`);
+                    if(lineTotalElem){
+                        lineTotalElem.innerText = lineTotal.toLocaleString('vi-VN') + ' ₫';
+                    }
+
+                    const totalCartElem = document.getElementById('cart-total-amount');
+                    if(totalCartElem && data.new_total_amount !== undefined){
+                        totalCartElem.innerText = data.new_total_amount.toLocaleString('vi-VN') + ' ₫';
+                    }
+                    const cartBadge = document.getElementById("cart-count");
+                    if(cartBadge && data.cart_count !== undefined){
+                        cartBadge.innerText = data.cart_count;
+                    }
+                }else{
+                    alert("Lỗi: " + data.message);
+                }
+            })
+            .catch(err => console.error("Lỗi Fetch:", err));
+        }
+    });
+</script>
 {% endblock %}
