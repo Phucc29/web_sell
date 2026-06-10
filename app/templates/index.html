@@ -32,4 +32,58 @@
     </div>
     {% endfor %}
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("search-input");
+    const searchResults = document.getElementById("search-results");
+
+    if (searchInput && searchResults) {
+        searchInput.addEventListener("input", function() {
+            const query = this.value.trim();
+
+            // Nếu người dùng xóa hết chữ, ẩn ngay khung kết quả
+            if (query.length === 0) {
+                searchResults.style.display = "none";
+                searchResults.innerHTML = "";
+                return;
+            }
+
+            // Gọi API ngầm lên Flask Backend để lấy sản phẩm khớp từ khóa
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(products => {
+                    if (products.length === 0) {
+                        // Nếu không tìm thấy sản phẩm nào khớp
+                        searchResults.innerHTML = `<div class="dropdown-item text-muted small py-2">Không tìm thấy sản phẩm nào...</div>`;
+                    } else {
+                        // Nếu có sản phẩm, lặp qua và vẽ HTML hiển thị dạng danh sách có ảnh nhỏ và giá tiền
+                        let htmlContent = "";
+                        products.forEach(p => {
+                            htmlContent += `
+                                <a href="/product_id/${p.id}" class="dropdown-item d-flex align-items-center py-2 border-bottom" style="gap: 10px;">
+                                    <img src="${p.image_url}" alt="${p.name}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 4px;">
+                                    <div style="white-space: normal;">
+                                        <div class="fw-semibold text-dark small mb-0" style="line-height: 1.2;">${p.name}</div>
+                                        <small class="text-primary fw-bold">${p.price}</small>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                        searchResults.innerHTML = htmlContent;
+                    }
+                    // Hiện khung dropdown kết quả lên màn hình
+                    searchResults.style.display = "block";
+                })
+                .catch(err => console.error("Lỗi tìm kiếm:", err));
+        });
+
+        // Tự động đóng khung tìm kiếm nếu người dùng click chuột ra ngoài khu vực ô tìm kiếm
+        document.addEventListener("click", function(event) {
+            if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                searchResults.style.display = "none";
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

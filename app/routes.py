@@ -177,3 +177,26 @@ def update_cart_item(item_id):
         'new_total_amount': new_total_amount,
         'cart_count': cart_count
     })
+
+@app.route('/api/search', methods=['GET'])
+def api_search():
+    # Lấy từ khóa 'q' khách gõ trên thanh tìm kiếm (ví dụ: /api/search?q=tai+nghe)
+    query = request.args.get('q', '').strip()
+    
+    if not query:
+        return jsonify([]) # Nếu trống thì trả về danh sách rỗng
+        
+    # Tìm kiếm trong DB: Tên sản phẩm chứa từ khóa (Không phân biệt hoa thường với ilike)
+    # Nếu dùng SQLite thì dùng .like(), dùng PostgreSQL thì dùng .ilike() cho chuẩn nhé
+    products = Product.query.filter(Product.name.ilike(f'%{query}%')).limit(5).all()
+    
+    # Chuyển đổi danh sách kết quả thành dạng JSON để gửi về cho JavaScript đọc
+    results = []
+    for p in products:
+        results.append({
+            'id': p.id,
+            'name': p.name,
+            'price': "{:,.0f}".format(p.price) + " ₫",
+            'image_url': p.image_url
+        })
+    return jsonify(results)
