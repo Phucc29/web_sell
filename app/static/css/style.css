@@ -183,3 +183,20 @@ box-shadow:0 2px 15px rgba(0,0,0,.08);
 font-size:80px;
 color:#adb5bd;
 }
+
+/* Trang base.html */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+}
+.main-wrapper {
+    flex: 1;
+}
+.hover-link {
+    transition: color 0.2s ease-in-out;
+}
+.hover-link:hover {
+    color: #ffc107 !important; /* Đổi sang màu vàng giống nút Đăng ký khi di chuột qua */
+}
