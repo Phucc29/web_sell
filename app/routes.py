@@ -5,9 +5,9 @@ from flask import render_template, request, redirect, url_for, flash, session
 from app.models import CartItem, Product, User, Oder, OderItem
 
 @app.route("/")
-
 def home():
-    products = Product.query.all() 
+    page = request.args.get('page', 1, type=int)
+    products = Product.query.paginate(page=page, per_page=6, error_out=False) 
     print("PRODUCTS =", products)
     return render_template('index.html', products=products)
 
@@ -49,7 +49,7 @@ def login():
             session['username'] = user.username
             session['is_admin'] = user.is_admin
             if user.is_admin:
-                return redirect(url_for('admin.index'))
+                return redirect(url_for('phuc_admin.index'))
             else:
                 return redirect(url_for('home'))
         else:
@@ -71,11 +71,18 @@ def product_detail(product_id):
 def api_add_to_cart(product_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'})
-    Product.query.get_or_404(product_id)
+    product = Product.query.get_or_404(product_id)
     data = request.get_json()
     quantity = int(data.get('quantity', 1))
     user_id = session['user_id']
     cart_item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
+    current_qty_in_cart = cart_item.quantity if cart_item else 0
+    new_total_qty = current_qty_in_cart + quantity
+    if new_total_qty > product.stock:
+        return jsonify({
+            'success': False,
+            'message': f'Rất tiếc, kho chỉ còn {product.stock} sản phẩm. Bạn đang có {current_qty_in_cart} sản phẩm trong giỏ.'
+        })
     if cart_item:
         cart_item.quantity += quantity
     else:
@@ -89,6 +96,8 @@ def api_add_to_cart(product_id):
 def cart_count():
     if 'user_id' not in session:
         return jsonify({'count': 0})
+    if session.get('is_admin'):
+        return redirect(url_for('phuc_admin.index'))
     count = sum(
         item.quantity
         for item in CartItem.query.filter_by(
@@ -101,10 +110,13 @@ def cart_count():
 def cart():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    if session.get('is_admin'):
+        return redirect(url_for('phuc_admin.index'))
     user_id = session['user_id']
     cart_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
     total_amount = sum(product.price * item.quantity for item, product in cart_items)
-    return render_template('cart.html', cart_items=cart_items, total_amount=total_amount)
+    total_quantity = sum(item[0].quantity for item in cart_items)
+    return render_template('cart.html', cart_items=cart_items, total_amount=total_amount, total_quantity=total_quantity)
 
 @app.route('/remove_from_cart/<int:item_id>')
 def remove_from_cart(item_id):
@@ -145,6 +157,8 @@ def order_history():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
+    if session.get('is_admin'):
+        return redirect(url_for('phuc_admin.index'))
     user_oders = Oder.query.filter_by(user_id = user_id).order_by(Oder.created_at.desc()).all()
     return render_template('orders.html', oders = user_oders)
 

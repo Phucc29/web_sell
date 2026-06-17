@@ -36,7 +36,7 @@ class Oder(db.Model):
 
     id = db.Column(db.Integer, primary_key = True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete = 'CASCADE'), nullable = False)
-    total_amount = db.Column(db.Numeric(10,2), nullable = False)
+    total_amount = db.Column(db.Numeric(20,2), nullable = False)
     status = db.Column(db.String(100), nullable = False, default = 'Đang chờ xử lý')
     created_at = db.Column(db.DateTime, default = datetime.now)
 
@@ -49,4 +49,4 @@ class OderItem(db.Model):
     oder_id = db.Column(db.Integer, db.ForeignKey('oders.id', ondelete = 'CASCADE'), nullable = False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable = False)
     quantity = db.Column(db.Integer, nullable = False)
-    total_money = db.Column(db.Numeric(10, 2), nullable = False)
+    total_money = db.Column(db.BigInteger, nullable = False)

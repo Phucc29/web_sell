@@ -4,6 +4,8 @@ from config import Config
 # 1. Import thêm thư viện Flask-Admin ở đầu file
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.theme import Bootstrap4Theme
+from flask_admin.menu import MenuLink
 
 db = SQLAlchemy()
 
@@ -26,7 +28,13 @@ def create_app():
         from app.models import User, Product, Oder, OderItem # Nhớ sửa lại đường dẫn import cho đúng cấu trúc folder của bạn
 
         # 2. Khởi tạo Admin nằm gọn trong Context của App
-        admin = Admin(app, name='PhucShop Admin')
+        admin = Admin(
+            app, 
+            name='Quản trị hệ thống', 
+            theme=Bootstrap4Theme(swatch='flatly'),
+            endpoint='phuc_admin' 
+        )
+        admin.add_link(MenuLink(name='Về trang chủ', category='', url='/'))
 
         # 3. Thêm các bảng vào giao diện quản trị Admin
         admin.add_view(SecureModelView(User, db.session, name="Người dùng"))

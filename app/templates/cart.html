@@ -61,7 +61,6 @@
                     id="qty-{{ item.id }}"
                     value="{{ item.quantity }}"
                     data-price="{{ product.price }}"
-                    readonly
                     style="width: 50px;">
 
                 <button class="btn-qty js-btn-plus" data-item-id="{{ item.id }}">+</button>
@@ -109,7 +108,7 @@
 
             <div class="mb-2">
                 Tổng thanh toán
-                ({{ cart_items | map(attribute='0.quantity') | sum }} sản phẩm)
+                (<span id="total-quantity-display">{{ total_quantity }}</span> sản phẩm)
             </div>
 
             <h3 class="fw-bold text-dark" id="cart-total-amount">

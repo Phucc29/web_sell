@@ -34,6 +34,17 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     });
+    document.querySelectorAll('.qty-box').forEach(inputField => {
+        inputField.addEventListener('change', function(){
+            const itemId = this.id.replace('qty-', '');
+            let currentQty = parseInt(this.value);
+            if(isNaN(currentQty) || currentQty < 1){
+                currentQty = 1;
+                this.value = 1;
+            }
+            sendUpdateCart(itemId, currentQty);
+        });
+    });
     function sendUpdateCart(itemId, newQty){
         fetch(`/api/cart/update/${itemId}`, {
             method: 'POST',
@@ -61,6 +72,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 const cartBadge = document.getElementById("cart-count");
                 if(cartBadge && data.cart_count !== undefined){
                     cartBadge.innerText = data.cart_count;
+                }
+                const totalQuantityDisplay = document.getElementById("total-quantity-display");
+                if(totalQuantityDisplay && data.cart_count !== undefined){
+                    totalQuantityDisplay.innerText = data.cart_count; 
                 }
             }else{
                 alert("Lỗi: " + data.message);
