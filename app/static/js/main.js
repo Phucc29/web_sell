@@ -56,28 +56,46 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(res => res.json())
         .then(data => {
             if(data.success){
-                const inputField = document.getElementById(`qty-${itemId}`);
-                const price = parseFloat(inputField.getAttribute('data-price'));
-                const lineTotal = price*newQty;
+                // 1. Nếu có tin nhắn cảnh báo (do bị ép số), hiện lên cho khách biết
+                if (data.message) {
+                    alert(data.message);
+                }
 
+                // 2. Lấy con số chính thức mà Server vừa chốt
+                const finalQty = data.updated_qty !== undefined ? data.updated_qty : newQty;
+
+                // 3. Ép lại ô input trên màn hình về đúng con số chuẩn
+                const inputField = document.getElementById(`qty-${itemId}`);
+                if (inputField) {
+                    inputField.value = finalQty;
+                }
+
+                // 4. Cập nhật THÀNH TIỀN của món hàng đó
+                const price = parseFloat(inputField.getAttribute('data-price'));
+                const lineTotal = price * finalQty;
                 const lineTotalElem = document.getElementById(`total-price-${itemId}`);
                 if(lineTotalElem){
                     lineTotalElem.innerText = lineTotal.toLocaleString('vi-VN') + ' ₫';
                 }
 
+                // 5. Cập nhật TỔNG TIỀN thanh toán bên dưới
                 const totalCartElem = document.getElementById('cart-total-amount');
                 if(totalCartElem && data.new_total_amount !== undefined){
                     totalCartElem.innerText = data.new_total_amount.toLocaleString('vi-VN') + ' ₫';
                 }
+
+                // 6. Cập nhật TỔNG SẢN PHẨM (cái chữ "4 sản phẩm" của bạn sẽ nhảy đúng)
                 const cartBadge = document.getElementById("cart-count");
                 if(cartBadge && data.cart_count !== undefined){
                     cartBadge.innerText = data.cart_count;
                 }
-                const totalQuantityDisplay = document.getElementById("total-quantity-display");
+                const totalQuantityDisplay = document.getElementById("total-quantity-display"); 
                 if(totalQuantityDisplay && data.cart_count !== undefined){
                     totalQuantityDisplay.innerText = data.cart_count; 
                 }
-            }else{
+
+            } else {
+                // Lỗi này giờ chỉ dành cho các ca nghiêm trọng (ví dụ: mất đăng nhập, lỗi hệ thống)
                 alert("Lỗi: " + data.message);
             }
         })
@@ -114,7 +132,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         products.forEach(p => {
                             htmlContent += `
                                 <a href="/product_id/${p.id}" class="dropdown-item d-flex align-items-center py-2 border-bottom" style="gap: 10px;">
-                                    <img src="${p.image_url}" alt="${p.name}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 4px;">
+                                    
+                                    <img src="/static/uploads/${p.image_url}" alt="${p.name}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 4px;">
+                                    
                                     <div style="white-space: normal;">
                                         <div class="fw-semibold text-dark small mb-0" style="line-height: 1.2;">${p.name}</div>
                                         <small class="text-primary fw-bold">${p.price}</small>

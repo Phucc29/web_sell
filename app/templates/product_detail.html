@@ -11,7 +11,7 @@
     <div class="row g-5">
         <div class="col-md-6">
             <div class="card border-0 shadow-sm p-3 bg-white rounded">
-                <img src="{{ product.image_url }}" 
+                <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" 
                      class="img-fluid d-block mx-auto" 
                      alt="{{ product.name }}"
                      style="max-height: 450px; object-fit: contain;">
@@ -44,7 +44,11 @@
             </div>
 
             <div class="mt-4">
-                {% if product.stock > 0 %}
+                {% if session.get('is_admin') %}
+                    <button type="button" class="btn btn-warning fw-bold text-dark" disabled>
+                        <i class="bi bi-shield-lock me-1"></i> QUẢN TRỊ VIÊN KHÔNG THỂ ĐẶT HÀNG
+                    </button>
+                {% elif product.stock > 0 %}
                     <div class="d-flex align-items-center gap-3">
                         <div class="input-group" style="width: 100px;">
                             <input type="number" id="quantity-input" class="form-control text-center" 

@@ -1,18 +1,21 @@
 from flask import current_app as app, jsonify
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from app.models import CartItem, Product, User, Oder, OderItem
+import traceback
+import logging
 
 @app.route("/")
 def home():
     page = request.args.get('page', 1, type=int)
     products = Product.query.paginate(page=page, per_page=6, error_out=False) 
-    print("PRODUCTS =", products)
     return render_template('index.html', products=products)
 
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
+    if 'user_id' in session:
+        return redirect(url_for('home'))
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
@@ -37,8 +40,9 @@ def register():
     return render_template('auth/register.html')
 
 @app.route('/login', methods = ['GET', 'POST'])
-
 def login():
+    if 'user_id' in session:
+        return redirect(url_for('home'))
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -71,6 +75,8 @@ def product_detail(product_id):
 def api_add_to_cart(product_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'})
+    if session.get('is_admin'):
+        return jsonify({'success': False, 'message': 'Lỗi: Quản trị viên không thể đặt hàng!'})
     product = Product.query.get_or_404(product_id)
     data = request.get_json()
     quantity = int(data.get('quantity', 1))
@@ -81,7 +87,7 @@ def api_add_to_cart(product_id):
     if new_total_qty > product.stock:
         return jsonify({
             'success': False,
-            'message': f'Rất tiếc, kho chỉ còn {product.stock} sản phẩm. Bạn đang có {current_qty_in_cart} sản phẩm trong giỏ.'
+            'message': f'Rất tiếc, kho chỉ còn {product.stock} sản phẩm.'
         })
     if cart_item:
         cart_item.quantity += quantity
@@ -97,7 +103,7 @@ def cart_count():
     if 'user_id' not in session:
         return jsonify({'count': 0})
     if session.get('is_admin'):
-        return redirect(url_for('phuc_admin.index'))
+        return jsonify({'success': False, 'message': 'Lỗi!'})
     count = sum(
         item.quantity
         for item in CartItem.query.filter_by(
@@ -118,8 +124,11 @@ def cart():
     total_quantity = sum(item[0].quantity for item in cart_items)
     return render_template('cart.html', cart_items=cart_items, total_amount=total_amount, total_quantity=total_quantity)
 
+# Chưa hiểu
 @app.route('/remove_from_cart/<int:item_id>')
 def remove_from_cart(item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     item = CartItem.query.get(item_id)
     if item and item.user_id == session.get('user_id'):
         db.session.delete(item)
@@ -128,6 +137,10 @@ def remove_from_cart(item_id):
 
 @app.route('/checkout', methods = ['GET','POST'])
 def checkout():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if session.get('is_admin'):
+        return redirect(url_for('phuc_admin.index'))
     user_id = session['user_id']
     cart_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
     total_amount = sum(product.price * item.quantity for item, product in cart_items)
@@ -164,6 +177,10 @@ def order_history():
 
 @app.route('/order/<int:oder_id>')
 def order_detail(oder_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if session.get('is_admin'):
+        return redirect(url_for('phuc_admin.index'))
     user_id = session.get('user_id')
     oder = Oder.query.filter_by(id = oder_id, user_id = user_id).first_or_404()
     oder_items = db.session.query(OderItem, Product).join(Product, OderItem.product_id == Product.id).filter(OderItem.oder_id == oder_id).all()
@@ -171,6 +188,10 @@ def order_detail(oder_id):
 
 @app.route('/api/cart/update/<int:item_id>', methods=['POST'])
 def update_cart_item(item_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Vui lòng đăng nhập!'})
+    if session.get('is_admin'):
+        return jsonify({'success': False, 'message': 'Admin không có giỏ hàng!'})
     user_id = session.get('user_id')
     cart_item = CartItem.query.filter_by(id=item_id, user_id=user_id).first()
     if not cart_item:
@@ -179,7 +200,13 @@ def update_cart_item(item_id):
     new_qty = int(data.get('quantity', 1))
     if new_qty < 1:
         return jsonify({'success': False, 'message': 'Số lượng không hợp lệ!'}), 400
-    
+    warning_msg = None
+    product = Product.query.get(cart_item.product_id)
+    if not product:
+        return jsonify({'success': False, 'message': 'Sản phẩm không tồn tại!'}), 400
+    if new_qty > product.stock:
+        new_qty = product.stock
+        warning_msg = f'Rất tiếc, kho chỉ còn {product.stock} sản phẩm.'
     cart_item.quantity = new_qty
     db.session.commit()
     all_items = db.session.query(CartItem, Product).join(Product, CartItem.product_id == Product.id).filter(CartItem.user_id == user_id).all()
@@ -188,6 +215,8 @@ def update_cart_item(item_id):
     cart_count = sum(item.quantity for item in CartItem.query.filter_by(user_id=user_id).all())
     return jsonify({
         'success': True,
+        'message': warning_msg, # Có thể có chữ hoặc là None
+        'updated_qty': new_qty, # Gửi số lượng chính thức về cho Frontend
         'new_total_amount': new_total_amount,
         'cart_count': cart_count
     })
@@ -214,3 +243,35 @@ def api_search():
             'image_url': p.image_url
         })
     return jsonify(results)
+
+@app.errorhandler(404)
+def not_found_error(error):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Dữ liệu không tồn tại hoặc sai đường dẫn!'}), 404
+    return redirect(url_for('home'))
+@app.errorhandler(405)
+def method_not_allowed_error(error):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Phương thức truy cập không được phép!'}), 404
+    return redirect(url_for('home'))
+
+@app.errorhandler(Exception)
+def internal_error(error):
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    logging.basicConfig(filename='app_errors.log', level=logging.ERROR, format='\n--- %(asctime)s ---\n%(message)s')
+    logging.error(f"Lỗi ở đường dẫn: {request.path}\n{traceback.format_exc()}")
+    if app.debug:
+        raise error
+        
+    # NẾU ĐÃ ĐƯA LÊN MẠNG (Debug = False) -> Giấu code, trả về thông báo thân thiện
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'success': False, 
+            'message': 'Hệ thống đang gặp sự cố. Lỗi đã được ghi nhận, vui lòng thử lại sau!'
+        }), 500
+        
+    flash('Đã xảy ra sự cố hệ thống không mong muốn. Đội ngũ kỹ thuật đã ghi nhận lỗi!', 'danger')
+    return redirect(url_for('home'))
