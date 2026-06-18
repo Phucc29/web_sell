@@ -6,6 +6,19 @@ from app.models import CartItem, Product, User, Oder, OderItem
 import traceback
 import logging
 
+@app.context_processor
+def inject_cart_count():
+    count = 0
+    if 'user_id' in session and not session.get('is_admin'):
+        try:
+            count = sum(
+                item.quantity
+                for item in CartItem.query.filter_by(user_id=session['user_id']).all()
+            )
+        except Exception as e:
+            pass
+    return dict(cart_count_from_backend=count)
+
 @app.route("/")
 def home():
     page = request.args.get('page', 1, type=int)
@@ -124,7 +137,6 @@ def cart():
     total_quantity = sum(item[0].quantity for item in cart_items)
     return render_template('cart.html', cart_items=cart_items, total_amount=total_amount, total_quantity=total_quantity)
 
-# Chưa hiểu
 @app.route('/remove_from_cart/<int:item_id>')
 def remove_from_cart(item_id):
     if 'user_id' not in session:
@@ -152,9 +164,9 @@ def checkout():
         db.session.add(new_oder)
         db.session.flush()
         for item, product in cart_items:
-            if product.stock < item.quantity:
-                flash(f'Sản phẩm {product.name} chỉ còn {product.stock} trong kho, không đủ số lượng đặt hàng!', 'danger')
-                return redirect(url_for('cart'))
+            # if product.stock < item.quantity:
+            #     flash(f'Sản phẩm {product.name} chỉ còn {product.stock} trong kho, không đủ số lượng đặt hàng!', 'danger')
+            #     return redirect(url_for('cart'))
             product.stock -= item.quantity
             item_total_money = product.price * item.quantity
             new_item = OderItem(oder_id = new_oder.id, product_id = product.id, quantity=item.quantity, total_money = item_total_money)
@@ -175,7 +187,7 @@ def order_history():
     user_oders = Oder.query.filter_by(user_id = user_id).order_by(Oder.created_at.desc()).all()
     return render_template('orders.html', oders = user_oders)
 
-@app.route('/order/<int:oder_id>')
+@app.route('/orders/<int:oder_id>')
 def order_detail(oder_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -252,7 +264,7 @@ def not_found_error(error):
 @app.errorhandler(405)
 def method_not_allowed_error(error):
     if request.path.startswith('/api/'):
-        return jsonify({'success': False, 'message': 'Phương thức truy cập không được phép!'}), 404
+        return jsonify({'success': False, 'message': 'Phương thức truy cập không được phép!'}), 405
     return redirect(url_for('home'))
 
 @app.errorhandler(Exception)

@@ -1,15 +1,15 @@
 // Trang base.html
-document.addEventListener("DOMContentLoaded", function() {
-    let cartBadge = document.getElementById("cart-count");
-    if(cartBadge){
-        fetch("/api/cart/count")
-            .then(res => res.json())
-            .then(data => {
-            cartBadge.innerText = data.count;
-        })
-        .catch(error => console.error("Lỗi cập nhật giỏ hàng:", error));
-    }
-});
+// document.addEventListener("DOMContentLoaded", function() {
+//     let cartBadge = document.getElementById("cart-count");
+//     if(cartBadge){
+//         fetch("/api/cart/count")
+//             .then(res => res.json())
+//             .then(data => {
+//             cartBadge.innerText = data.count;
+//         })
+//         .catch(error => console.error("Lỗi cập nhật giỏ hàng:", error));
+//     }
+// });
 // Cart thêm bớt sản phẩm trong giỏ hàng
 document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll('.js-btn-plus').forEach(button => {
